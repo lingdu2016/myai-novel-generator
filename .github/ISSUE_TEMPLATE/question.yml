@@ -1,0 +1,153 @@
+name: 问题咨询
+description: 寻求使用帮助或解答疑问
+title: "[问题] "
+labels: ["question"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎使用 AI 小说生成工具！如果您在使用过程中遇到问题或需要帮助，请填写以下信息。
+
+  - type: textarea
+    id: question-description
+    attributes:
+      label: 问题描述
+      description: 请详细描述您的问题或疑问
+      placeholder: |
+        请清晰地描述您的问题，包括：
+        - 您想要了解什么？
+        - 您在哪个环节遇到了困难？
+        - 您期望得到什么样的答案？
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted-solutions
+    attributes:
+      label: 已尝试的解决方案
+      description: 请描述您已经尝试过的解决方法
+      placeholder: |
+        例如：
+        - 我已经查看了 [文档章节]
+        - 我已经尝试了 [具体操作]
+        - 我已经搜索了 [关键词]
+        - 我已经咨询了 [其他渠道]
+    validations:
+      required: true
+
+  - type: textarea
+    id: documentation-links
+    attributes:
+      label: 相关文档链接
+      description: 如果您参考了特定文档，请提供链接
+      placeholder: |
+        例如：
+        - README.md 中的 [章节标题]
+        - CONTRIBUTING.md 中的 [指南]
+        - 在线文档的 [URL]
+        - 配置文件的 [相关部分]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: question-category
+    attributes:
+      label: 问题类别
+      description: 请选择您的问题属于哪个类别
+      options:
+        - 安装和配置
+        - 基本使用
+        - 高级功能
+        - API 集成
+        - 导出和格式
+        - 性能优化
+        - 兼容性问题
+        - 其他
+      default: 0
+
+  - type: checkboxes
+    id: environment-info
+    attributes:
+      label: 环境信息
+      description: 请提供您的系统环境信息（可选）
+      options:
+        - label: 操作系统
+          required: false
+        - label: Python 版本
+          required: false
+        - label: 依赖版本
+          required: false
+
+  - type: textarea
+    id: python-version
+    attributes:
+      label: Python 版本
+      description: 请输入您的 Python 版本（可选）
+      placeholder: python --version
+      validations:
+        required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 依赖版本
+      description: 请列出相关依赖的版本信息（可选）
+      placeholder: |
+        可以通过以下命令获取：
+        pip list
+        或查看 requirements.txt 文件
+      validations:
+        required: false
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 使用场景
+      description: 描述您的具体使用场景
+      placeholder: |
+        例如：
+        - 我正在尝试生成 [类型] 小说
+        - 我需要 [特定功能] 来完成 [任务]
+        - 我的配置是 [具体配置]
+        - 我的目标是 [达到什么效果]
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: 期望结果
+      description: 描述您期望得到的结果
+      placeholder: |
+        例如：
+        - 我希望系统能够 [具体表现]
+        - 我期待的功能是 [具体功能]
+        - 我想要达到的效果是 [具体效果]
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: 附加信息
+      description: 任何其他有助于理解问题的信息
+      placeholder: |
+        例如：
+        - 相关的错误信息
+        - 截图或日志
+        - 特定的配置文件
+        - 网络环境信息
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 请确认以下事项
+      options:
+        - label: 我已经搜索了现有的问题和文档
+          required: true
+        - label: 我已经尝试过基本的故障排除步骤
+          required: true
+        - label: 我理解这是一个咨询类问题，不是错误报告
+          required: true

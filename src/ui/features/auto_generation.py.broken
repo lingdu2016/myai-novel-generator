@@ -1,0 +1,1061 @@
+"""
+完整小说自动生成功能
+支持缓存机制、上下文机制、连贯性系统
+
+版权所有 © 2026 新疆幻城网安科技有限责任公司 (幻城科技)
+作者：幻城
+"""
+
+import logging
+from typing import List, Tuple, Optional, Dict
+from pathlib import Path
+from datetime import datetime
+import json
+
+logger = logging.getLogger(__name__)
+
+
+class AutoNovelGenerator:
+    """
+    自动小说生成器
+
+    功能：
+    1. 根据设定生成大纲
+    2. 逐章生成内容
+    3. 使用缓存机制支持暂停/恢复
+    4. 使用上下文机制保持连贯性
+    5. 使用连贯性系统跟踪角色、剧情、世界观
+    """
+
+    def __init__(
+        self,
+        api_client,
+        prompt_manager,
+        coherence_system,
+        project_dir: Path,
+        cache_dir: Optional[Path] = None,
+        outline_max_tokens: int = 8000  # 大纲生成的max_tokens（实际来自全局max_tokens配置）
+    ):
+        """
+        初始化生成器
+
+        Args:
+            api_client: API客户端
+            prompt_manager: 提示词管理器
+            coherence_system: 连贯性系统 (character_tracker, plot_manager, world_db)
+            project_dir: 项目目录
+            cache_dir: 缓存目录
+            outline_max_tokens: 大纲生成的最大token数（来自全局Max Tokens配置，默认8000）
+        """
+        self.api_client = api_client
+        self.prompt_manager = prompt_manager
+        self.character_tracker = coherence_system.get("character_tracker")
+        self.plot_manager = coherence_system.get("plot_manager")
+        self.world_db = coherence_system.get("world_db")
+        self.project_dir = project_dir
+        self.cache_dir = cache_dir or Path("cache/generation")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.outline_max_tokens = outline_max_tokens  # 保存配置
+
+        # 生成状态
+        self.is_generating = False
+        self.should_stop = False
+        self.current_project_id = None
+        self.current_chapter = 0
+        self.total_chapters = 0
+
+    def generate_outline(
+        self,
+        title: str,
+        genre: str,
+        character_setting: str,
+        world_setting: str,
+        plot_idea: str,
+        chapter_count: int
+    ) -> Tuple[bool, str, List[Dict]]:
+        """
+        生成小说大纲（支持分批生成，适用于大规模章节）
+
+        Args:
+            title: 小说标题
+            genre: 类型
+            character_setting: 角色设定
+            world_setting: 世界观设定
+            plot_idea: 剧情构思
+            chapter_count: 章节数
+
+        Returns:
+            (success, message, outline_list)
+        """
+        try:
+            logger.info(f"开始生成大纲: {title} ({chapter_count}章)")
+
+            # 限制输入长度，避免超出模型限制
+            max_char_setting = 500
+            char_setting_short = character_setting[:max_char_setting] if len(character_setting) > max_char_setting else character_setting
+            world_setting_short = world_setting[:max_char_setting] if len(world_setting) > max_char_setting else world_setting
+            plot_idea_short = plot_idea[:max_char_setting] if len(plot_idea) > max_char_setting else plot_idea
+
+            # 判断是否需要分批生成
+            batch_size = 10  # 每批生成10章
+            all_chapters = []
+
+            if chapter_count <= batch_size:
+                # 小规模：一次性生成
+                logger.info(f"章节数较少({chapter_count}章)，一次性生成")
+                success, message, chapters = self._generate_single_batch(
+                    title, genre, char_setting_short, world_setting_short,
+                    plot_idea_short, chapter_count, 1, []
+                )
+                if not success:
+                    return False, message, []
+                all_chapters = chapters
+            else:
+                # 大规模：分批生成
+                logger.info(f"章节数较多({chapter_count}章)，采用分批生成策略（每批{batch_size}章）")
+                total_batches = (chapter_count + batch_size - 1) // batch_size
+
+                for batch_num in range(total_batches):
+                    start_chapter = batch_num * batch_size + 1
+                    end_chapter = min((batch_num + 1) * batch_size, chapter_count)
+                    current_batch_size = end_chapter - start_chapter + 1
+
+                    logger.info(f"生成第{batch_num + 1}/{total_batches}批: 第{start_chapter}-{end_chapter}章（共{current_batch_size}章）")
+
+                    success, message, chapters = self._generate_single_batch(
+                        title, genre, char_setting_short, world_setting_short,
+                        plot_idea_short, current_batch_size, start_chapter, all_chapters
+                    )
+
+                    if not success:
+                        return False, f"第{batch_num + 1}批生成失败: {message}", all_chapters
+
+                    all_chapters.extend(chapters)
+                    logger.info(f"第{batch_num + 1}批生成成功，已累计生成{len(all_chapters)}章")
+
+            logger.info(f"大纲生成完成，共{len(all_chapters)}章")
+            return True, f"大纲生成成功，共{len(all_chapters)}章", all_chapters
+
+        except Exception as e:
+            logger.error(f"生成大纲失败: {e}")
+            return False, f"生成大纲失败: {str(e)}", []
+
+    def _generate_single_batch(
+        self,
+        title: str,
+        genre: str,
+        character_setting: str,
+        world_setting: str,
+        plot_idea: str,
+        chapter_count: int,
+        start_chapter_num: int,
+        previous_chapters: List[Dict]
+    ) -> Tuple[bool, str, List[Dict]]:
+        """
+        生成单批章节大纲
+
+        Args:
+            title: 小说标题
+            genre: 类型
+            character_setting: 角色设定
+            world_setting: 世界观设定
+            plot_idea: 剧情构思
+            chapter_count: 本批章节数
+            start_chapter_num: 起始章节号
+            previous_chapters: 之前生成的章节列表（作为上下文）
+
+        Returns:
+            (success, message, chapters)
+        """
+        try:
+            # 构建上下文信息（所有已生成的章节）
+            context_info = ""
+            if previous_chapters:
+                context_info = f"\n\n前面已生成的章节（共{len(previous_chapters)}章，请基于这些章节继续往下生成）：\n"
+                for ch in previous_chapters:
+                    context_info += f"第{ch['num']}章：{ch['title']} - {ch['description']}\n"
+
+            prompt = f"""请为一部{genre}小说生成大纲。
+
+小说标题：{title}
+
+角色设定：
+{character_setting}
+
+世界观设定：
+{world_setting}
+
+剧情构思：
+{plot_idea}
+{context_info}
+要求：
+- 基于上面已生成的章节，**继续往下生成**第{start_chapter_num}到第{start_chapter_num + chapter_count - 1}章
+- 每章包含章节标题和简要描述（50字内）
+- 确保剧情连贯，与前面章节自然衔接
+
+请严格按照以下JSON格式返回，不要添加任何其他文字、说明或markdown代码块标记：
+
+{{
+  "title": "{title}",
+  "chapters": [
+    {{"num": {start_chapter_num}, "title": "章节标题", "description": "章节描述"}},
+    {{"num": {start_chapter_num + 1}, "title": "章节标题", "description": "章节描述"}}
+  ]
+}}
+
+直接返回JSON，开头结尾都不要任何其他字符。"""
+
+            # 调用API生成
+            logger.debug(f"调用API生成第{start_chapter_num}-{start_chapter_num + chapter_count - 1}章")
+            response = self.api_client.generate([
+                {"role": "system", "content": "你是一个专业的小说大纲创作助手。"},
+                {"role": "user", "content": prompt}
+            ], temperature=0.7, max_tokens=self.outline_max_tokens)
+
+            if not response:
+                logger.error("API返回空响应")
+                return False, "AI返回空响应", []
+
+            logger.debug(f"API响应长度: {len(response)} 字符")
+
+            # 解析JSON响应（复用之前的解析逻辑）
+            result = self._parse_outline_response(response)
+            if not result:
+                return False, "无法解析AI返回的大纲（JSON格式错误）", []
+
+            # 验证章节号是否正确
+            chapters = result.get("chapters", [])
+            if not chapters:
+                return False, "返回的大纲没有章节信息", []
+
+            # 确保章节号正确
+            for i, ch in enumerate(chapters):
+                expected_num = start_chapter_num + i
+                if ch['num'] != expected_num:
+                    logger.warning(f"章节号不匹配: 期望{expected_num}，实际{ch['num']}，自动修正")
+                    ch['num'] = expected_num
+
+            return True, "生成成功", chapters
+
+        except Exception as e:
+            logger.error(f"生成批次大纲失败: {e}")
+            return False, f"生成失败: {str(e)}", []
+
+    def _parse_outline_response(self, response: str) -> Optional[Dict]:
+        """
+        解析大纲API响应
+
+        Args:
+            response: API返回的原始响应
+
+        Returns:
+            解析后的字典，失败返回None
+        """
+        import re
+
+        try:
+            result = json.loads(response)
+            logger.info("直接解析JSON成功")
+            return result
+        except json.JSONDecodeError as je:
+            logger.warning(f"直接解析JSON失败: {je}，尝试清理和提取JSON")
+
+            # 清理响应内容
+            cleaned_response = response.strip()
+
+            # 去除可能的markdown代码块标记
+            if cleaned_response.startswith("```json"):
+                cleaned_response = cleaned_response[7:]
+            elif cleaned_response.startswith("```"):
+                cleaned_response = cleaned_response[3:]
+            if cleaned_response.endswith("```"):
+                cleaned_response = cleaned_response[:-3]
+            cleaned_response = cleaned_response.strip()
+
+            # 尝试解析清理后的响应
+            try:
+                result = json.loads(cleaned_response)
+                logger.info("清理后成功解析JSON")
+                return result
+            except json.JSONDecodeError:
+                # 尝试提取JSON部分（使用正则表达式）
+                json_match = re.search(r'\{[\s\S]*\}', cleaned_response)
+                if json_match:
+                    json_str = json_match.group(0)
+                    try:
+                        result = json.loads(json_str)
+                        logger.info("通过正则提取成功解析JSON")
+                        return result
+                    except json.JSONDecodeError as je3:
+                        logger.error(f"正则提取后仍然解析失败: {je3}")
+                        logger.error(f"原始响应（前1000字符）: {response[:1000]}")
+                        return None
+                else:
+                    logger.error(f"无法找到JSON格式")
+                    logger.error(f"原始响应（前1000字符）: {response[:1000]}")
+                    return None
+
+    def save_generation_cache(
+        self,
+        project_id: str,
+        chapter_num: int,
+        chapter_data: Dict,
+        context_data: Optional[Dict] = None
+    ) -> None:
+        """
+        保存生成缓存
+
+        Args:
+            project_id: 项目ID
+            chapter_num: 章节号
+            chapter_data: 章节数据
+            context_data: 上下文数据（摘要等）
+        """
+        try:
+            cache_file = self.cache_dir / f"{project_id}_cache.json"
+
+            # 读取现有缓存
+            if cache_file.exists():
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cache = json.load(f)
+            else:
+                cache = {
+                    "project_id": project_id,
+                    "generated_chapters": {},
+                    "context": {}
+                }
+
+            # 保存章节数据
+            cache["generated_chapters"][str(chapter_num)] = {
+                "data": chapter_data,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            # 保存上下文数据
+            if context_data:
+                cache["context"][str(chapter_num)] = context_data
+
+            # 写入文件
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(cache, f, ensure_ascii=False, indent=2)
+
+            logger.debug(f"保存缓存: 第{chapter_num}章")
+
+        except Exception as e:
+            logger.warning(f"保存缓存失败: {e}")
+
+    def load_generation_cache(self, project_id: str) -> Dict:
+        """
+        加载生成缓存
+
+        Args:
+            project_id: 项目ID
+
+        Returns:
+            缓存数据字典
+        """
+        try:
+            cache_file = self.cache_dir / f"{project_id}_cache.json"
+            if cache_file.exists():
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    cache = json.load(f)
+                logger.info(f"加载缓存: {len(cache.get('generated_chapters', {}))} 章")
+                return cache
+        except Exception as e:
+            logger.warning(f"加载缓存失败: {e}")
+
+        return {}
+
+    def generate_chapter(
+        self,
+        project_id: str,
+        chapter_info: Dict,
+        previous_chapters: List[Dict],
+        use_context: bool = True
+    ) -> Tuple[bool, str, Dict]:
+        """
+        生成单个章节
+
+        Args:
+            project_id: 项目ID
+            chapter_info: 章节信息 {num, title, description}
+            previous_chapters: 前面章节列表
+            use_context: 是否使用上下文
+
+        Returns:
+            (success, message, chapter_data)
+        """
+        try:
+            chapter_num = chapter_info["num"]
+            chapter_title = chapter_info["title"]
+            chapter_desc = chapter_info["description"]
+
+            logger.info(f"生成第 {chapter_num} 章: {chapter_title}")
+
+            # 构建上下文
+            context_parts = []
+
+            if use_context and previous_chapters:
+                # 使用摘要模式（更短的上下文）
+                context_parts.append("【前情提要】")
+                for prev_ch in previous_chapters[-3:]:  # 只取最近3章
+                    summary = prev_ch.get("summary", prev_ch.get("desc", ""))
+                    if summary:
+                        context_parts.append(f"第{prev_ch['num']}章 {prev_ch['title']}: {summary[:100]}")
+
+                context_text = "\n".join(context_parts)
+            else:
+                context_text = "【这是第一章，直接开始创作】"
+
+            # 获取连贯性信息
+            coherence_info = self._get_coherence_context(project_id, chapter_num)
+
+            # 构建生成提示词
+            prompt = f"""{context_text}
+
+【当前章节】
+第{chapter_num}章：{chapter_title}
+
+【章节要求】
+{chapter_desc}
+
+{coherence_info}
+
+【创作要求】
+1. 字数要求：2000-3000字
+2. 保持与前文的连贯性
+3. 角色性格和行为要一致
+4. 情节发展要自然
+5. 注意环境描写的连贯性
+
+请开始创作本章内容："""
+
+            # 调用API生成
+            response = self.api_client.generate([
+                {"role": "system", "content": "你是一个专业的小说作家，擅长创作引人入胜的故事。"},
+                {"role": "user", "content": prompt}
+            ], temperature=0.8, max_tokens=4000)
+
+            if not response or len(response.strip()) < 100:
+                return False, f"第{chapter_num}章生成内容过短", {}
+
+            # 构建章节数据
+            chapter_data = {
+                "num": chapter_num,
+                "title": chapter_title,
+                "desc": chapter_desc,
+                "content": response,
+                "word_count": len(response),
+                "generated_at": datetime.now().isoformat()
+            }
+
+            # 生成摘要
+            summary_prompt = f"""请用一句话总结以下章节的主要情节（50字以内）：
+
+{response[:500]}
+
+只返回摘要，不要其他文字。"""
+
+            summary = self.api_client.generate([
+                {"role": "system", "content": "你是一个专业的文本总结助手。"},
+                {"role": "user", "content": summary_prompt}
+            ], temperature=0.3, max_tokens=200)
+
+            chapter_data["summary"] = summary.strip() if summary else ""
+
+            # 更新连贯性系统
+            self._update_coherence_system(project_id, chapter_data)
+
+            # 保存缓存
+            self.save_generation_cache(
+                project_id,
+                chapter_num,
+                chapter_data,
+                {"summary": chapter_data.get("summary", "")}
+            )
+
+            logger.info(f"第 {chapter_num} 章生成成功，字数: {chapter_data['word_count']}")
+            return True, f"第{chapter_num}章生成成功", chapter_data
+
+        except Exception as e:
+            logger.error(f"生成第{chapter_num}章失败: {e}")
+            return False, f"第{chapter_num}章生成失败: {str(e)}", {}
+
+    def _get_coherence_context(self, project_id: str, chapter_num: int) -> str:
+        """获取连贯性上下文"""
+        context_parts = []
+
+        # 角色状态
+        if self.character_tracker and self.character_tracker.all_characters:
+            context_parts.append("【主要角色】")
+            # 获取前5个角色的当前状态
+            for char_name in list(self.character_tracker.all_characters)[:5]:
+                char_state = self.character_tracker.get_character_current_state(char_name)
+                if char_state:
+                    status = char_state.location or "未知"
+                    personality = char_state.personality or ""
+                    context_parts.append(f"- {char_name}: {status} {f'({personality})' if personality else ''}")
+                else:
+                    context_parts.append(f"- {char_name}")
+
+        # 剧情线
+        if self.plot_manager:
+            active_threads = self.plot_manager.get_active_threads()
+            if active_threads:
+                context_parts.append("\n【当前剧情线】")
+                for thread in active_threads[:3]:
+                    context_parts.append(f"- {thread.name}: {thread.status}")
+
+        # 世界观信息（如果有相关内容）
+        if self.world_db:
+            try:
+                world_summary = self.world_db.get_world_summary(max_items=3)
+                if world_summary and len(world_summary) > 20:
+                    context_parts.append(f"\n{world_summary}")
+            except Exception as e:
+                logger.debug(f"获取世界观摘要失败: {e}")
+
+        return "\n".join(context_parts) if context_parts else ""
+
+    def _update_coherence_system(self, project_id: str, chapter_data: Dict) -> None:
+        """更新连贯性系统"""
+        try:
+            chapter_content = chapter_data.get("content", "")
+            chapter_num = chapter_data.get("num", 1)
+
+            if not chapter_content or len(chapter_content) < 50:
+                logger.warning(f"章节内容过短，跳过连贯性提取: 第{chapter_num}章")
+                return
+
+            # 提取并更新角色信息
+            if self.character_tracker:
+                try:
+                    from src.core.coherence.character_tracker import analyze_characters_from_chapter
+                    logger.info(f"开始提取角色信息: 第{chapter_num}章")
+                    analyze_characters_from_chapter(
+                        chapter_content,
+                        chapter_num,
+                        self.character_tracker,
+                        self.api_client
+                    )
+                    logger.info(f"角色信息提取完成: 第{chapter_num}章")
+                except Exception as e:
+                    logger.error(f"提取角色信息失败: {e}")
+
+            # 提取并更新剧情信息
+            if self.plot_manager:
+                try:
+                    from src.core.coherence.plot_manager import analyze_plot_from_chapter
+                    logger.info(f"开始提取剧情信息: 第{chapter_num}章")
+                    analyze_plot_from_chapter(
+                        chapter_content,
+                        chapter_num,
+                        self.plot_manager,
+                        self.api_client
+                    )
+                    logger.info(f"剧情信息提取完成: 第{chapter_num}章")
+                except Exception as e:
+                    logger.error(f"提取剧情信息失败: {e}")
+
+            # 注意：世界观数据库暂不支持自动提取，需要手动添加或使用其他方式
+
+        except Exception as e:
+            logger.error(f"更新连贯性系统失败: {e}", exc_info=True)
+
+    def generate_full_novel(
+        self,
+        project_id: str,
+        outline: List[Dict],
+        start_chapter: int = 1,
+        progress_callback=None
+    ) -> Tuple[bool, str, List[Dict]]:
+        """
+        生成完整小说
+
+        Args:
+            project_id: 项目ID
+            outline: 大纲列表
+            start_chapter: 起始章节号
+            progress_callback: 进度回调函数
+
+        Returns:
+            (success, message, all_chapters)
+        """
+        try:
+            self.is_generating = True
+            self.should_stop = False
+            self.current_project_id = project_id
+            self.total_chapters = len(outline)
+
+            all_chapters = []
+            failed_chapters = []  # 记录失败的章节
+
+            logger.info(f"开始生成完整小说: {len(outline)} 章")
+
+            # 确定要生成的章节范围
+            for chapter_info in outline:
+                if self.should_stop:
+                    logger.info("用户请求停止生成")
+                    break
+
+                chapter_num = chapter_info.get("num", 1)
+                if chapter_num < start_chapter:
+                    continue
+
+                # 更新进度
+                if progress_callback:
+                    progress_callback(
+                        f"生成进度: {chapter_num}/{self.total_chapters} - 正在生成第 {chapter_num} 章: {chapter_info.get('title', '')}"
+                    )
+
+                logger.info(f"生成进度: {chapter_num}/{self.total_chapters} - 正在生成第 {chapter_num} 章: {chapter_info.get('title', '')}")
+
+                # 生成章节
+                success, message, chapter_data = self.generate_chapter(
+                    project_id,
+                    chapter_info,
+                    all_chapters,  # 前面的章节作为上下文
+                    use_context=True
+                )
+
+                if not success:
+                    logger.warning(f"第 {chapter_num} 章生成失败: {message}")
+                    # 记录失败但继续生成
+                    failed_chapters.append({
+                        "num": chapter_num,
+                        "title": chapter_info.get("title", ""),
+                        "error": message
+                    })
+                    # 继续生成下一章，不中断
+                    continue
+
+                all_chapters.append(chapter_data)
+
+                # 保存到项目文件（每生成一章就保存）
+                self._save_project_chapters(project_id, all_chapters)
+
+            # 生成完成后的总结
+            success_count = len(all_chapters)
+            failed_count = len(failed_chapters)
+
+            if failed_count > 0:
+                logger.warning(f"生成完成，但{failed_count}章失败: {[ch['num'] for ch in failed_chapters]}")
+                message = f"部分成功: 成功生成{success_count}章，失败{failed_count}章"
+                if failed_chapters:
+                    message += f" (失败章节: {', '.join([str(ch['num']) for ch in failed_chapters])})"
+
+            # 保存连贯性系统数据
+            try:
+                if self.character_tracker:
+                    self.character_tracker.save_to_disk()
+                if self.plot_manager:
+                    self.plot_manager.save_to_disk()
+                if self.world_db:
+                    self.world_db.save_to_disk()
+                logger.info("连贯性系统数据已保存")
+            except Exception as e:
+                logger.warning(f"保存连贯性系统数据失败: {e}")
+
+            # 如果至少有一章成功，就认为整体成功
+            return len(all_chapters) > 0, message, all_chapters
+
+        except Exception as e:
+            logger.error(f"生成小说失败: {e}", exc_info=True)
+            return False, f"生成失败: {str(e)}", []
+
+        finally:
+            self.is_generating = False
+
+    def stop_generation(self) -> None:
+
+            # 确保连贯性系统已初始化
+            if not self.character_tracker or not self.plot_manager or not self.world_db:
+                logger.info(f"初始化连贯性系统: {project_id}")
+                from src.core.coherence import CharacterTracker, PlotManager, WorldDatabase
+                cache_dir = Path("cache/coherence")
+                cache_dir.mkdir(parents=True, exist_ok=True)
+
+                if not self.character_tracker:
+                    self.character_tracker = CharacterTracker(project_id, cache_dir)
+                if not self.plot_manager:
+                    self.plot_manager = PlotManager(project_id, cache_dir)
+                if not self.world_db:
+                    self.world_db = WorldDatabase(project_id, cache_dir)
+
+                logger.info("连贯性系统初始化完成")
+
+            # 加载缓存
+            cache = self.load_generation_cache(project_id)
+            cached_chapters = cache.get("generated_chapters", {})
+
+            all_chapters = []
+            failed_chapters = []  # 记录失败的章节
+
+            for i, chapter_info in enumerate(outline):
+                chapter_num = chapter_info["num"]
+
+                # 检查是否应该停止
+                if self.should_stop:
+                    logger.info("用户停止生成")
+                    return False, "生成已停止", all_chapters
+
+                # 更新进度
+                self.current_chapter = i + 1
+                if progress_callback:
+                    progress_callback(
+                        i + 1,
+                        len(outline),
+                        f"正在生成第 {chapter_num} 章: {chapter_info['title']}"
+                    )
+
+                # 检查缓存
+                if str(chapter_num) in cached_chapters:
+                    logger.info(f"使用缓存: 第 {chapter_num} 章")
+                    chapter_data = cached_chapters[str(chapter_num)]["data"]
+                    all_chapters.append(chapter_data)
+                    continue
+
+                # 生成章节
+                success, message, chapter_data = self.generate_chapter(
+                    project_id,
+                    chapter_info,
+                    all_chapters,  # 前面的章节作为上下文
+                    use_context=True
+                )
+
+                if not success:
+                    logger.warning(f"第 {chapter_num} 章生成失败: {message}")
+                    # 记录失败但继续生成
+                    failed_chapters.append({
+                        "num": chapter_num,
+                        "title": chapter_info.get("title", ""),
+                        "error": message
+                    })
+                    # 继续生成下一章，不中断
+                    continue
+
+                all_chapters.append(chapter_data)
+
+                # 保存到项目文件（每生成一章就保存）
+                self._save_project_chapters(project_id, all_chapters)
+
+            # 生成完成后的总结
+            success_count = len(all_chapters)
+            failed_count = len(failed_chapters)
+
+            if failed_count > 0:
+                logger.warning(f"生成完成，但{failed_count}章失败: {[ch['num'] for ch in failed_chapters]}")
+                message = f"部分成功: 成功生成{success_count}章，失败{failed_count}章"
+                if failed_chapters:
+                    message += f" (失败章节: {', '.join([str(ch['num']) for ch in failed_chapters])})"
+
+            # 保存连贯性系统数据
+            try:
+                if self.character_tracker:
+                    self.character_tracker.save_to_disk()
+                if self.plot_manager:
+                    self.plot_manager.save_to_disk()
+                if self.world_db:
+                    self.world_db.save_to_disk()
+                logger.info("连贯性系统数据已保存")
+            except Exception as e:
+                logger.warning(f"保存连贯性系统数据失败: {e}")
+
+            # 如果至少有一章成功，就认为整体成功
+            return len(all_chapters) > 0, message, all_chapters
+
+        except Exception as e:
+            logger.error(f"生成小说失败: {e}", exc_info=True)
+            return False, f"生成失败: {str(e)}", []
+
+        finally:
+            self.is_generating = False
+
+    def stop_generation(self) -> None:
+        """停止生成"""
+        self.should_stop = True
+        logger.info("已发送停止信号")
+
+    def _save_project_chapters(self, project_id: str, chapters: List[Dict]) -> None:
+        """保存章节到项目文件"""
+        try:
+            project_file = self.project_dir / f"{project_id}.json"
+
+            # 读取现有项目数据
+            if project_file.exists():
+                with open(project_file, 'r', encoding='utf-8') as f:
+                    project_data = json.load(f)
+            else:
+                project_data = {
+                    "id": project_id,
+                    "chapters": []
+                }
+
+            # 更新章节
+            project_data["chapters"] = chapters
+            project_data["updated_at"] = datetime.now().isoformat()
+
+            # 保存
+            with open(project_file, 'w', encoding='utf-8') as f:
+                json.dump(project_data, f, ensure_ascii=False, indent=2)
+
+            logger.debug(f"保存项目文件: {len(chapters)} 章")
+
+        except Exception as e:
+            logger.warning(f"保存项目文件失败: {e}")
+
+
+def create_auto_generation_ui(
+    app_state,
+    generator: AutoNovelGenerator
+):
+    """
+    创建自动生成UI
+
+    Args:
+        app_state: 应用状态
+        generator: 自动生成器实例
+
+    Returns:
+        Gradio组件
+    """
+    import gradio as gr
+
+    # 自动生成状态
+    generation_progress = gr.State(value="")
+    generation_status = gr.State(value="")
+
+    with gr.Column():
+        gr.Markdown("## 🚀 完整小说自动生成")
+        gr.Markdown("填写基本信息 → 指定章节数 → 一键生成整本小说")
+
+        with gr.Row():
+            with gr.Column(scale=2):
+                auto_title = gr.Textbox(
+                    label="小说标题",
+                    placeholder="例如：修仙之路",
+                    lines=1
+                )
+                auto_genre = gr.Textbox(
+                    label="小说类型",
+                    placeholder="例如：玄幻/仙侠/科幻/都市",
+                    lines=1
+                )
+
+            with gr.Column(scale=3):
+                auto_chapter_count = gr.Slider(
+                    minimum=10,
+                    maximum=1000,
+                    value=50,
+                    step=10,
+                    label="章节数量",
+                    info="生成多少章"
+                )
+
+        auto_character_setting = gr.Textbox(
+            label="角色设定",
+            placeholder="描述主要角色：姓名、性格、背景、目标等",
+            lines=5
+        )
+
+        auto_world_setting = gr.Textbox(
+            label="世界观设定",
+            placeholder="描述故事世界的规则、背景、设定等",
+            lines=5
+        )
+
+        auto_plot_idea = gr.Textbox(
+            label="剧情构思",
+            placeholder="描述主要剧情走向、冲突、高潮等",
+            lines=5
+        )
+
+        # 生成选项
+        with gr.Row():
+            auto_use_context = gr.Checkbox(
+                value=True,
+                label="使用上下文机制",
+                info="每章会参考前文内容"
+            )
+            auto_use_coherence = gr.Checkbox(
+                value=True,
+                label="使用连贯性系统",
+                info="跟踪角色、剧情、世界观"
+            )
+
+        # 生成按钮
+        with gr.Row():
+            auto_generate_btn = gr.Button("🚀 开始生成", variant="primary", size="lg")
+            auto_pause_btn = gr.Button("⏸️ 暂停", variant="stop")
+            auto_stop_btn = gr.Button("⏹️ 停止", variant="stop")
+
+        # 进度显示
+        progress_box = gr.Textbox(
+            label="生成进度",
+            lines=10,
+            interactive=False
+        )
+
+        progress_bar = gr.Progress()
+
+        # 操作按钮
+        with gr.Row():
+            auto_load_btn = gr.Button("📂 加载已生成项目")
+            auto_export_btn = gr.Button("📤 导出小说")
+
+        # 生成结果
+        auto_result = gr.Textbox(
+            label="生成结果",
+            lines=5,
+            interactive=False
+        )
+
+    # 事件处理
+    def on_start_generation(
+        title,
+        genre,
+        chapter_count,
+        character_setting,
+        world_setting,
+        plot_idea,
+        use_context,
+        use_coherence
+    ):
+        """开始生成"""
+        if not title or not genre:
+            yield "❌ 请填写小说标题和类型", "", "请填写完整信息"
+            return
+
+        if not character_setting or not world_setting or not plot_idea:
+            yield "❌ 请填写角色设定、世界观设定和剧情构思", "", "信息不完整"
+            return
+
+        try:
+            # 生成项目ID
+            project_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+            # 1. 生成大纲
+            progress_text = f"📝 正在生成大纲...\n"
+            yield progress_text, "", "正在生成大纲..."
+
+            success, message, outline = generator.generate_outline(
+                title,
+                genre,
+                character_setting,
+                world_setting,
+                plot_idea,
+                int(chapter_count)
+            )
+
+            if not success:
+                yield f"❌ {message}", "", "大纲生成失败"
+                return
+
+            progress_text += f"✓ {message}\n大纲包含 {len(outline)} 章\n\n"
+            yield progress_text, "", f"大纲已生成，共{len(outline)}章"
+
+            # 2. 创建项目
+            project_data = {
+                "id": project_id,
+                "title": title,
+                "genre": genre,
+                "character_setting": character_setting,
+                "world_setting": world_setting,
+                "plot_idea": plot_idea,
+                "chapter_count": len(outline),
+                "chapters": [],
+                "outline": outline,
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat()
+            }
+
+            project_file = app_state.project_dir / f"{project_id}.json"
+            with open(project_file, 'w', encoding='utf-8') as f:
+                json.dump(project_data, f, ensure_ascii=False, indent=2)
+
+            progress_text += f"✓ 项目创建成功 (ID: {project_id})\n\n"
+            yield progress_text, "", f"项目已创建，开始生成章节..."
+
+            # 3. 开始生成章节
+            progress_text += f"📖 开始生成章节...\n"
+
+            def progress_callback(current, total, message):
+                nonlocal progress_text
+                progress_text += f"  [{current}/{total}] {message}\n"
+                logger.info(f"生成进度: {current}/{total} - {message}")
+
+            success, message, all_chapters = generator.generate_full_novel(
+                project_id,
+                outline,
+                start_chapter=1,
+                progress_callback=progress_callback
+            )
+
+            progress_text += f"\n{'✓' if success else '⚠️'} {message}\n"
+
+            if success:
+                progress_text += f"\n🎉 小说生成完成！\n"
+                progress_text += f"总章节数: {len(all_chapters)}\n"
+                total_words = sum(ch.get('word_count', 0) for ch in all_chapters)
+                progress_text += f"总字数: {total_words:,}\n"
+                progress_text += f"项目ID: {project_id}\n"
+                result_message = f"成功生成 {len(all_chapters)} 章，共 {total_words:,} 字"
+            else:
+                progress_text += f"\n⚠️ 生成未完成，已生成 {len(all_chapters)} 章\n"
+                progress_text += f"您可以稍后继续生成\n"
+                result_message = f"生成了 {len(all_chapters)} 章"
+
+            yield progress_text, project_id, result_message
+
+        except Exception as e:
+            logger.error(f"生成失败: {e}")
+            yield f"❌ 生成失败: {str(e)}", "", "生成失败"
+
+    def on_pause_generation():
+        """暂停生成"""
+        generator.should_stop = True
+        return "已暂停生成，您可以稍后继续"
+
+    def on_stop_generation():
+        """停止生成"""
+        generator.stop_generation()
+        return "已停止生成"
+
+    # 绑定事件
+    auto_generate_btn.click(
+        fn=on_start_generation,
+        inputs=[
+            auto_title,
+            auto_genre,
+            auto_chapter_count,
+            auto_character_setting,
+            auto_world_setting,
+            auto_plot_idea,
+            auto_use_context,
+            auto_use_coherence
+        ],
+        outputs=[progress_box, auto_result, auto_result]
+    )
+
+    auto_pause_btn.click(
+        fn=on_pause_generation,
+        outputs=[progress_box]
+    )
+
+    auto_stop_btn.click(
+        fn=on_stop_generation,
+        outputs=[progress_box]
+    )
+
+    return {
+        "auto_title": auto_title,
+        "auto_genre": auto_genre,
+        "auto_chapter_count": auto_chapter_count,
+        "auto_character_setting": auto_character_setting,
+        "auto_world_setting": auto_world_setting,
+        "auto_plot_idea": auto_plot_idea,
+        "auto_use_context": auto_use_context,
+        "auto_use_coherence": auto_use_coherence,
+        "progress_box": progress_box,
+        "auto_result": auto_result
+    }

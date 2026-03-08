@@ -1,0 +1,16 @@
+{
+    "version": "4.5",
+    "last_modified": "2026-01-23T22:00:47.110768",
+    "backends": [],
+    "generation": {
+        "temperature": 0.8,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_tokens": 40960,
+        "chapter_target_words": 4000,
+        "writing_style": "流畅自然，情节紧凑，人物刻画细腻",
+        "writing_tone": "中性",
+        "character_development": "详细",
+        "plot_complexity": "中等"
+    }
+}

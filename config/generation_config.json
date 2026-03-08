@@ -1,0 +1,15 @@
+{
+  "temperature": 0.75,
+  "top_p": 0.9,
+  "top_k": 50,
+  "max_tokens": 9100,
+  "target_words": 3000,
+  "writing_style": "通俗易懂",
+  "writing_tone": "混合",
+  "character_dev": "缓慢深入",
+  "plot_complexity": "简单直白",
+  "context_enable": true,
+  "context_mode": "full",
+  "context_max_chapters": 41,
+  "context_auto_allocate": true
+}

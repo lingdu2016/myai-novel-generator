@@ -1,0 +1,57 @@
+# ============================================================
+# AI Novel Generator 4.0 - 生产依赖
+# 版权所有 © 2026 新疆幻城网安科技有限责任公司 (幻城科技)
+# ============================================================
+#
+# Python 版本要求: 3.9 - 3.14
+# 安装命令: pip install -r requirements.txt
+#
+# ============================================================
+
+# ------------------- 核心依赖 -------------------
+
+# Web UI 框架 - 使用 Gradio 5.x 最新稳定版
+# Gradio 5.x 修复了 gradio-client 的 TypeError bug
+gradio>=5.0.0,<6.0.0
+
+# API 客户端（支持 OpenAI 兼容格式的各种 LLM 提供商）
+openai>=1.54.0,<2.0.0
+
+# Word 文档处理（用于润色功能读取 .docx 文件，以及导出 Word 格式）
+python-docx>=1.1.2,<2.0.0
+
+# ------------------- 关键依赖版本锁定 -------------------
+# 这些版本确保与 Python 3.9-3.14 的兼容性和稳定性
+
+# huggingface_hub - Gradio 5.x 支持更新版本
+huggingface_hub>=0.19.3
+
+# httpx 版本锁定（gradio 依赖）
+httpx>=0.24.1
+
+# httpcore 版本锁定（httpx 依赖）
+httpcore>=1.0.0
+
+# pydantic 版本锁定
+pydantic>=2.0.0,<3.0.0
+
+# ------------------- 说明 -------------------
+#
+# 注意事项:
+#   1. 如果遇到依赖冲突，先卸载现有包:
+#      pip uninstall gradio gradio-client huggingface_hub
+#   2. 然后重新安装: pip install -r requirements.txt
+#   3. 或使用强制重新安装: pip install --force-reinstall -r requirements.txt
+#
+# 兼容性:
+#   - Python 3.9: 完全支持
+#   - Python 3.10: 完全支持（推荐）
+#   - Python 3.11: 完全支持
+#   - Python 3.12: 完全支持
+#   - Python 3.13: 完全支持
+#   - Python 3.14: 实验性支持
+#
+# 版本变更说明:
+#   - 从 Gradio 4.x 升级到 5.x 以修复已知的 bug
+#   - Gradio 5.x 具有更好的稳定性和兼容性
+#

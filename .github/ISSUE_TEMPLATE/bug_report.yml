@@ -1,0 +1,136 @@
+name: Bug 报告
+description: 报告 AI 小说生成工具中的错误和问题
+title: "[Bug] "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您花时间报告此问题！为了帮助我们更好地理解和修复问题，请填写以下信息。
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 问题描述
+      description: 请详细描述遇到的问题
+      placeholder: |
+        请清晰地描述您遇到的问题，包括：
+        - 问题发生在什么操作中？
+        - 问题是否可以重现？
+        - 问题的具体表现是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: 重现步骤
+      description: 详细说明重现问题的步骤
+      placeholder: |
+        1. 打开 AI 小说生成工具
+        2. 点击 [某个按钮]
+        3. 输入 [具体内容]
+        4. 点击 [确认]
+        5. 问题出现
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 描述您期望的正常行为
+      placeholder: |
+        正常情况下，应该 [描述期望的行为]
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为
+      description: 描述实际发生的情况
+      placeholder: |
+        实际上，系统 [描述实际发生的情况]
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: environment-info
+    attributes:
+      label: 环境信息
+      description: 请提供您的系统环境信息
+      options:
+        - label: 操作系统
+          required: true
+        - label: Python 版本
+          required: true
+        - label: 依赖版本
+          required: true
+
+  - type: textarea
+    id: python-version
+    attributes:
+      label: Python 版本
+      description: 请输入您的 Python 版本（例如：3.9.7）
+      placeholder: python --version
+      validations:
+        required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 依赖版本
+      description: 请列出相关依赖的版本信息
+      placeholder: |
+        可以通过以下命令获取：
+        pip list
+        或查看 requirements.txt 文件
+      validations:
+        required: true
+
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: 错误日志
+      description: 请粘贴完整的错误日志
+      placeholder: |
+        请复制粘贴完整的错误信息，包括：
+        - 错误堆栈跟踪
+        - 相关的警告信息
+        - 控制台输出
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图
+      description: 如果适用，请提供问题的截图
+      placeholder: |
+        请描述截图内容，或说明如何重现问题以获取截图
+        可以使用截图工具捕获问题界面
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: 附加信息
+      description: 任何其他有助于理解问题的信息
+      placeholder: |
+        例如：
+        - 问题是否特定于某种类型的小说生成？
+        - 是否有特定的配置会导致此问题？
+        - 问题是否影响导出功能？
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 请确认以下事项
+      options:
+        - label: 我已经搜索了现有的问题，确认这是一个新问题
+          required: true
+        - label: 我已经尝试过重启应用程序
+          required: true
+        - label: 我已经检查了是否是配置问题
+          required: true

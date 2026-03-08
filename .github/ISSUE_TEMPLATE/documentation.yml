@@ -1,0 +1,165 @@
+name: 文档改进
+description: 改进项目文档的清晰度和完整性
+title: "[文档改进] "
+labels: ["documentation"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您为 AI 小说生成工具的文档做出贡献！清晰的文档对用户体验至关重要。
+
+  - type: dropdown
+    id: doc-location
+    attributes:
+      label: 文档位置
+      description: 请选择您想要改进的文档类型
+      options:
+        - README.md - 项目主要说明文档
+        - CONTRIBUTING.md - 贡献指南
+        - 在线文档
+        - 配置文件注释
+        - 代码注释
+        - 用户手册
+        - API 文档
+        - 其他
+      default: 0
+
+  - type: textarea
+    id: doc-section
+    attributes:
+      label: 文档章节
+      description: 请具体指出文档中的章节或部分
+      placeholder: |
+        例如：
+        - README.md 中的 "安装" 部分
+        - CONTRIBUTING.md 中的 "代码规范" 章节
+        - 配置文件中的 "API 设置" 注释
+        - 用户手册中的 "快速开始" 章节
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement-content
+    attributes:
+      label: 改进内容
+      description: 请详细描述需要改进的具体内容
+      placeholder: |
+        请描述您发现的问题，包括：
+        - 文档是否缺少重要信息？
+        - 解释是否不够清晰？
+        - 步骤是否不够详细？
+        - 示例是否不够具体？
+        - 格式是否不够规范？
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-changes
+    attributes:
+      label: 建议修改
+      description: 请提供具体的修改建议
+      placeholder: |
+        请提供详细的修改建议，包括：
+        - 建议添加的内容
+        - 建议修改的表述
+        - 建议补充的示例
+        - 建议调整的结构
+        - 建议优化的格式
+    validations:
+      required: true
+
+  - type: dropdown
+    id: improvement-type
+    attributes:
+      label: 改进类型
+      description: 请选择文档改进的类型
+      options:
+        - 添加缺失信息
+        - 改进表述清晰度
+        - 补充具体示例
+        - 优化格式结构
+        - 修正错误信息
+        - 更新过时内容
+        - 增加使用场景
+        - 其他
+      default: 0
+
+  - type: textarea
+    id: target-audience
+    attributes:
+      label: 目标受众
+      description: 这个文档主要面向哪些用户
+      placeholder: |
+        例如：
+        - 新手用户
+        - 开发者
+        - 管理员
+        - 高级用户
+        - 特定角色用户
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: priority
+    attributes:
+      label: 优先级评估
+      description: 请评估此文档改进的紧急程度
+      options:
+        - label: 高 - 影响用户基本使用和理解
+          required: false
+        - label: 中 - 有助于提升用户体验
+          required: false
+        - label: 低 - 可选的优化改进
+          required: false
+
+  - type: textarea
+    id: examples-needed
+    attributes:
+      label: 需要的示例
+      description: 如果需要添加示例，请在此描述
+      placeholder: |
+        例如：
+        - 需要添加 [具体功能] 的使用示例
+        - 需要提供 [配置选项] 的示例值
+        - 需要展示 [常见问题] 的解决方案
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: 附加信息
+      description: 任何其他有助于改进文档的信息
+      placeholder: |
+        例如：
+        - 参考的其他优秀文档
+        - 用户反馈汇总
+        - 常见误解说明
+        - 最佳实践建议
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 贡献意愿
+      description: 您是否愿意参与文档改进
+      options:
+        - label: 我愿意直接提交文档改进的 Pull Request
+          required: false
+        - label: 我愿意协助测试改进后的文档
+          required: false
+        - label: 我愿意提供更多相关信息
+          required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 请确认以下事项
+      options:
+        - label: 我已经阅读了现有的文档，确认需要改进
+          required: true
+        - label: 我理解文档改进需要遵循项目的文档规范
+          required: true
+        - label: 我确认这是一个文档相关的改进建议，不是功能请求
+          required: true
