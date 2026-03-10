@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Novel Generator 4.0 - 入口文件
+AI Novel Generator 4.5 Beta - 入口文件
 
 重构版本，集成连贯性系统、提示词系统、统一API客户端
 
@@ -37,7 +37,7 @@ def main():
 
     try:
         logger.info("=" * 60)
-        logger.info("AI Novel Generator 4.0")
+        logger.info("AI Novel Generator 4.5 Beta")
         logger.info("智能连贯性系统 | 22+提供商 | 灵活提示词")
         logger.info("=" * 60)
 
