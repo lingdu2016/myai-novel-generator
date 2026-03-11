@@ -1,3 +1,16 @@
+---
+title: AI Novel Generator
+emoji: 📖
+colorFrom: purple
+colorTo: blue
+sdk: gradio
+sdk_version: "5.0"
+app_file: run.py
+pinned: false
+---
+
+
+
 # AI小说生成器 4.5
 
 <div align="center">
