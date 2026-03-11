@@ -1,0 +1,21 @@
+name: Sync to HuggingFace
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to HuggingFace
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "CI"
+          git remote add hf https://${{ github.actor }}:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${{ secrets.HF_USERNAME }}/ai-novel-generator
+          git push hf main --force
