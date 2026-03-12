@@ -656,3 +656,38 @@ def get_api_client() -> Optional[UnifiedAPIClient]:
     except Exception as e:
         logger.error(f"加载API客户端失败: {e}")
         return None
+
+
+def save_api_config(config_data: Dict) -> bool:
+    """
+    保存API配置到本地并同步到云端
+
+    Args:
+        config_data: 配置数据字典
+
+    Returns:
+        是否保存成功
+    """
+    try:
+        config_file = get_config_dir() / "user_config.json"
+        config_file.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
+
+        # 同步到云端（异步）
+        import threading
+        def sync_config_to_cloud():
+            try:
+                from src.config.supabase_client import ConfigSyncManager
+                sync_mgr = ConfigSyncManager()
+                sync_mgr.sync_config(config_data)
+            except Exception as e:
+                logger.debug(f"同步配置到云端失败: {e}")
+
+        threading.Thread(target=sync_config_to_cloud, daemon=True).start()
+
+        return True
+    except Exception as e:
+        logger.error(f"保存API配置失败: {e}")
+        return False

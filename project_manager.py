@@ -1,5 +1,5 @@
 """
-项目管理模块 - 支持保存、加载、导出项目
+项目管理模块 - 支持保存、加载、导出项目，集成 Supabase 云端同步
 
 版权所有 © 2026 新疆幻城网安科技有限责任公司 (幻城科技)
 作者：幻城
@@ -9,15 +9,33 @@ import os
 import re
 import tempfile
 import logging
+import threading
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
 from src.config.paths import get_projects_dir
+from src.config.supabase_client import (
+    ProjectSyncManager,
+    is_sync_enabled,
+    restore_projects_from_cloud
+)
 
 logger = logging.getLogger(__name__)
 
 PROJECTS_DIR = get_projects_dir()
 PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
+
+# 全局同步管理器
+_project_sync_manager: Optional[ProjectSyncManager] = None
+_sync_lock = threading.Lock()
+
+
+def get_project_sync_manager() -> Optional[ProjectSyncManager]:
+    """获取项目同步管理器实例"""
+    global _project_sync_manager
+    if _project_sync_manager is None and is_sync_enabled():
+        _project_sync_manager = ProjectSyncManager()
+    return _project_sync_manager
 
 
 class ProjectManager:
@@ -76,6 +94,18 @@ class ProjectManager:
             with open(project_file, 'w', encoding='utf-8') as f:
                 json.dump(project_data, f, ensure_ascii=False, indent=2)
 
+            # 同步到云端（异步执行，不阻塞）
+            def sync_to_cloud():
+                try:
+                    sync_mgr = get_project_sync_manager()
+                    if sync_mgr:
+                        sync_mgr.sync_project(project_id, project_data)
+                except Exception as e:
+                    logger.warning(f"[项目管理] 同步项目到云端失败: {e}")
+
+            # 在后台线程中同步
+            threading.Thread(target=sync_to_cloud, daemon=True).start()
+
             logger.info(f"[项目管理] 创建项目: {title} (ID: {project_id}), 类型: {genre}, 章节数: {chapter_count}")
             return project_id, f"项目创建成功: {project_id}"
 
@@ -86,7 +116,7 @@ class ProjectManager:
     @staticmethod
     def save_project(project_id: str, project_data: Dict) -> Tuple[bool, str]:
         """
-        保存项目到磁盘
+        保存项目到磁盘，并同步到云端
 
         Args:
             project_id: 项目ID
@@ -109,6 +139,20 @@ class ProjectManager:
 
             chapter_count = len(project_data.get("chapters", []))
             logger.info(f"[项目管理] 项目已保存: {project_id}, 章节数: {chapter_count}")
+
+            # 同步到云端（异步执行，不阻塞）
+            def sync_to_cloud():
+                try:
+                    sync_mgr = get_project_sync_manager()
+                    if sync_mgr:
+                        sync_mgr.sync_project(project_id, project_data)
+                        logger.debug(f"[项目管理] 项目已同步到云端: {project_id}")
+                except Exception as e:
+                    logger.warning(f"[项目管理] 同步项目到云端失败: {e}")
+
+            # 在后台线程中同步
+            threading.Thread(target=sync_to_cloud, daemon=True).start()
+
             return True, f"项目已保存: {project_id}"
 
         except Exception as e:
@@ -235,7 +279,7 @@ class ProjectManager:
     @staticmethod
     def delete_project(project_id: str) -> Tuple[bool, str]:
         """
-        删除项目
+        删除项目（本地和云端）
 
         Returns:
             (成功标志, 状态信息)
@@ -244,9 +288,25 @@ class ProjectManager:
             project_file = Path(PROJECTS_DIR) / f"{project_id}.json"
 
             if not project_file.exists():
+                # 仍然尝试删除云端数据
+                sync_mgr = get_project_sync_manager()
+                if sync_mgr:
+                    sync_mgr.delete_project(project_id)
                 return False, f"项目不存在: {project_id}"
 
             project_file.unlink()
+
+            # 同时删除云端数据（异步）
+            def delete_from_cloud():
+                try:
+                    sync_mgr = get_project_sync_manager()
+                    if sync_mgr:
+                        sync_mgr.delete_project(project_id)
+                        logger.debug(f"[项目管理] 项目已从云端删除: {project_id}")
+                except Exception as e:
+                    logger.warning(f"[项目管理] 从云端删除项目失败: {e}")
+
+            threading.Thread(target=delete_from_cloud, daemon=True).start()
 
             logger.info(f"[项目管理] 项目已删除: {project_id}")
             return True, f"项目已删除: {project_id}"
