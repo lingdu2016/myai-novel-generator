@@ -410,6 +410,117 @@ python run.py
 
 ---
 
+## ☁️ Hugging Face Spaces 云端同步
+
+本项目支持通过 **Supabase** 实现云端数据持久化，解决 HF Spaces 免费版重启后数据丢失的问题。
+
+### 配置步骤
+
+#### 1. 注册 Supabase 账号
+- 访问 https://supabase.com
+- 使用 GitHub 账号登录
+- 创建新项目（免费版支持 500MB 数据库 + 1GB 存储）
+
+#### 2. 创建数据库表
+在 Supabase Dashboard 中：
+1. 点击左侧 "SQL Editor"
+2. 新建查询
+3. 执行以下 SQL 脚本创建表：
+
+```sql
+-- 创建 projects 表 - 存储项目元数据
+CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    title TEXT,
+    genre TEXT,
+    character_setting TEXT,
+    world_setting TEXT,
+    plot_idea TEXT,
+    chapter_count INTEGER DEFAULT 0,
+    outline JSONB DEFAULT '[]'::jsonb,
+    chapters JSONB DEFAULT '[]'::jsonb,
+    coherence_data JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建 configs 表 - 存储用户配置
+CREATE TABLE IF NOT EXISTS configs (
+    user_id TEXT PRIMARY KEY,
+    providers JSONB DEFAULT '{}'::jsonb,
+    generation_params JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建 generation_cache 表 - 存储生成进度缓存
+CREATE TABLE IF NOT EXISTS generation_cache (
+    project_id TEXT PRIMARY KEY,
+    current_chapter INTEGER DEFAULT 0,
+    outline_progress JSONB DEFAULT '{}'::jsonb,
+    coherence_snapshot JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_projects_updated_at ON projects(updated_at);
+
+-- 创建更新时间触发器
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$ language 'plpgsql';
+
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
+CREATE TRIGGER update_projects_updated_at
+    BEFORE UPDATE ON projects
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+#### 3. 获取连接信息
+在 Supabase Dashboard 中：
+1. 点击左侧 "Settings" > "API"
+2. 复制以下信息：
+   - **Project URL**: `https://your-project.supabase.co`
+   - **anon public API Key**: `eyJ...` (以 anon 开头的密钥)
+
+#### 4. 在 Hugging Face Spaces 中设置 Secrets
+1. 进入你的 Space 设置页面
+2. 点击 "Settings" > "Secrets"
+3. 添加以下环境变量：
+
+| Secret 名称 | 值 | 说明 |
+|------------|-----|------|
+| `SUPABASE_URL` | `https://your-project.supabase.co` | Supabase 项目 URL |
+| `SUPABASE_KEY` | `eyJ...` | anon public API Key |
+
+#### 5. 验证配置
+重启 HF Space 后，查看日志：
+- 如果看到 "Supabase 客户端初始化成功"，说明配置正确
+- 如果看到 "Supabase not configured"，说明环境变量未设置
+
+### 功能特性
+
+- ✅ **自动同步**：创建/保存项目时自动同步到云端
+- ✅ **启动恢复**：Space 重启后自动从云端恢复数据
+- ✅ **配置同步**：API 配置和生成参数也会同步
+- ✅ **进度缓存**：生成进度自动保存到云端
+- ✅ **离线降级**：网络断开时仍可正常使用本地存储
+
+### 注意事项
+
+1. **存储限制**：Supabase 免费版有 500MB 数据库限制，大型项目可能受限
+2. **安全性**：使用 anon key 而不是 service_role key，更安全
+3. **降级模式**：如果不需要云端同步，不设置环境变量即可，程序会自动降级到本地存储
+4. **网络问题**：网络断开时仍可正常使用，同步会延迟到网络恢复
+
+---
+
 ## 📞 联系方式
 
 项目主页： https: //github.com/yangqi1309134997-coder/ai-novel-generator/
