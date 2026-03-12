@@ -9,6 +9,7 @@ import json
 import logging
 from typing import Dict, List, Optional
 from pathlib import Path
+from ...config.paths import get_config_dir
 from datetime import datetime
 
 from .templates import PRESET_TEMPLATES
@@ -35,7 +36,7 @@ class PromptManager:
         Args:
             config_dir: 配置目录
         """
-        self.config_dir = config_dir or Path("config")
+        self.config_dir = config_dir or get_config_dir()
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
         # 自定义模板 {category: {name: template}}

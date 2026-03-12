@@ -13,6 +13,7 @@
 import logging
 import sys
 from pathlib import Path
+from ..config.paths import get_logs_dir
 from datetime import datetime
 from typing import Optional
 import atexit
@@ -22,8 +23,8 @@ class LogConfig:
     """日志配置类"""
 
     # 日志目录
-    LOG_DIR = Path("logs")
-    LOG_DIR.mkdir(exist_ok=True)
+    LOG_DIR = get_logs_dir()
+    # LOG_DIR.mkdir(exist_ok=True)
 
     # 日志标签前缀
     LOG_TAGS = {

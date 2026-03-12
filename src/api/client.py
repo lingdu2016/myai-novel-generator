@@ -19,12 +19,13 @@ import threading
 from openai import OpenAI, RateLimitError, APIError
 
 from ..config.providers import ProviderFactory, ProviderConfig, PRESET_PROVIDERS
+from ..config.paths import get_cache_dir, get_config_dir
 from ..utils.api_logger import get_api_logger
 
 logger = logging.getLogger(__name__)
 
 # 缓存目录
-CACHE_DIR = Path("cache/api")
+CACHE_DIR = get_cache_dir() / "api"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # 最大缓存条数
@@ -639,7 +640,7 @@ def get_api_client() -> Optional[UnifiedAPIClient]:
     """
     try:
         # 从配置文件加载
-        config_file = Path("config/user_config.json")
+        config_file = get_config_dir() / "user_config.json"
         if not config_file.exists():
             return None
 

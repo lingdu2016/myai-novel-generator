@@ -10,6 +10,7 @@ import logging
 import re
 from typing import List, Tuple, Optional, Dict
 from pathlib import Path
+from src.config.paths import get_cache_dir
 from datetime import datetime
 import json
 
@@ -59,7 +60,7 @@ class AutoNovelGenerator:
         self.plot_manager = coherence_system.get("plot_manager")
         self.world_db = coherence_system.get("world_db")
         self.project_dir = project_dir
-        self.cache_dir = cache_dir or Path("cache/generation")
+        self.cache_dir = cache_dir or get_cache_dir() / "generation"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.outline_max_tokens = outline_max_tokens # 保存配置
 
@@ -2318,6 +2319,7 @@ def create_auto_generation_ui(
             # 导入ProjectManager
             import sys
             from pathlib import Path
+from src.config.paths import get_cache_dir
             sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
             from project_manager import ProjectManager
 
@@ -2405,6 +2407,7 @@ def create_auto_generation_ui(
             # 导入ProjectManager
             import sys
             from pathlib import Path
+from src.config.paths import get_cache_dir
             sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
             from project_manager import ProjectManager
 

@@ -3,9 +3,7 @@ title: AI Novel Generator
 emoji: 📖
 colorFrom: purple
 colorTo: blue
-sdk: gradio
-sdk_version: "5.0"
-app_file: run.py
+sdk: docker
 pinned: false
 ---
 
