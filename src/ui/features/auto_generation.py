@@ -2319,7 +2319,6 @@ def create_auto_generation_ui(
             # 导入ProjectManager
             import sys
             from pathlib import Path
-from src.config.paths import get_cache_dir
             sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
             from project_manager import ProjectManager
 
@@ -2407,7 +2406,6 @@ from src.config.paths import get_cache_dir
             # 导入ProjectManager
             import sys
             from pathlib import Path
-from src.config.paths import get_cache_dir
             sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
             from project_manager import ProjectManager
 
