@@ -10,11 +10,12 @@ import logging
 import json
 from typing import Dict, Any, Tuple
 from pathlib import Path
+from ...config.paths import get_config_dir
 
 logger = logging.getLogger(__name__)
 
 # 配置文件路径
-CONFIG_FILE = Path("config/generation_config.json")
+CONFIG_FILE = get_config_dir() / "generation_config.json"
 
 
 # 默认配置 - 针对小说生成优化的最佳值

@@ -18,11 +18,12 @@ import logging
 from typing import Tuple, Optional, List, Dict
 from datetime import datetime
 from pathlib import Path
+from src.config.paths import get_exports_dir
 
 logger = logging.getLogger(__name__)
 
 # 导出目录
-EXPORT_DIR = Path("exports")
+EXPORT_DIR = get_exports_dir()
 EXPORT_DIR.mkdir(exist_ok=True)
 
 

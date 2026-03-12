@@ -28,6 +28,7 @@ from src.core.coherence import (
 )
 from src.core.prompts import PromptManager
 from src.config.providers import ProviderFactory, PRESET_PROVIDERS
+from src.config.paths import get_projects_dir, get_logs_dir, get_cache_dir, get_exports_dir, get_config_dir
 
 # 导入功能模块
 from .features import (
@@ -43,7 +44,7 @@ from .components.coherence_viz import CoherenceVizUI
 # ==================== 日志配置 ====================
 
 # 创建日志目录
-log_dir = Path("logs")
+log_dir = get_logs_dir()
 log_dir.mkdir(exist_ok=True)
 
 # 配置根日志记录器
@@ -144,13 +145,13 @@ class AppState:
         self.auto_generator: Optional[AutoNovelGenerator] = None
 
         # 项目管理器
-        self.project_dir = Path("projects")
+        self.project_dir = get_projects_dir()
         self.project_dir.mkdir(exist_ok=True)
 
     def init_coherence_systems(self, project_id: str):
         """初始化连贯性系统"""
         logger.info(f"[应用] 初始化连贯性系统: {project_id}")
-        cache_dir = Path("cache/coherence")
+        cache_dir = get_cache_dir() / "coherence"
         self.character_tracker = CharacterTracker(project_id, cache_dir)
         self.plot_manager = PlotManager(project_id, cache_dir)
         self.world_db = WorldDatabase(project_id, cache_dir)
@@ -159,7 +160,7 @@ class AppState:
     def init_prompt_system(self):
         """初始化提示词系统"""
         logger.info("[应用] 初始化提示词系统")
-        config_dir = Path("config")
+        config_dir = get_config_dir()
         self.prompt_manager = PromptManager(config_dir)
         logger.info("[应用] 提示词系统已初始化")
 
@@ -176,7 +177,7 @@ class AppState:
         Returns:
             是否成功加载配置
         """
-        config_file = Path("config/user_config.json")
+        config_file = get_config_dir() / "user_config.json"
         if not config_file.exists():
             logger.info("[应用] 未找到API配置文件，跳过自动加载")
             return False
@@ -470,7 +471,7 @@ def export_project(project_id: str, export_format: str = "json") -> Tuple[Option
     """
     try:
         # 创建导出目录
-        export_dir = Path("exports")
+        export_dir = get_exports_dir()
         export_dir.mkdir(exist_ok=True)
 
         # 加载项目数据
@@ -906,7 +907,7 @@ def create_api_config_ui():
             config = ProviderFactory.get_provider_by_name(name)
             if config:
                 # 尝试从用户配置中读取该提供商的配置
-                config_file = Path("config/user_config.json")
+                config_file = get_config_dir() / "user_config.json"
                 timeout_val = 60  # 默认值
                 max_retries_val = 3  # 默认值
                 if config_file.exists():
@@ -978,7 +979,7 @@ def create_api_config_ui():
                 return error_msg, get_providers_list()
 
             # 保存到配置文件
-            config_dir = Path("config")
+            config_dir = get_config_dir()
             config_dir.mkdir(exist_ok=True)
             config_file = config_dir / "user_config.json"
 
@@ -1034,7 +1035,7 @@ def create_api_config_ui():
                 return "✗ 未找到提供商配置", get_providers_list()
 
             # 保存到配置文件
-            config_dir = Path("config")
+            config_dir = get_config_dir()
             config_dir.mkdir(exist_ok=True)
             config_file = config_dir / "user_config.json"
 
@@ -1075,7 +1076,7 @@ def create_api_config_ui():
 
         def on_clear_all_configs():
             """清空所有API配置"""
-            config_file = Path("config/user_config.json")
+            config_file = get_config_dir() / "user_config.json"
 
             if not config_file.exists():
                 return "ℹ️ 没有配置需要清空", get_providers_list()
@@ -1140,7 +1141,7 @@ def create_api_config_ui():
 
         def get_providers_list():
             """获取已配置提供商列表"""
-            config_file = Path("config/user_config.json")
+            config_file = get_config_dir() / "user_config.json"
             if not config_file.exists():
                 return "**尚未配置任何API接口**\n\n请选择提供商并配置"
 
@@ -1740,13 +1741,13 @@ def create_main_ui():
                     project_id = project.get("id")
                     if project_id:
                         try:
-                            project_file = Path("projects") / f"{project_id}.json"
+                            project_file = get_projects_dir() / f"{project_id}.json"
                             if project_file.exists():
                                 project_file.unlink()
                                 deleted += 1
                             else:
                                 # 尝试旧格式
-                                project_dir = Path("projects") / project_id
+                                project_dir = get_projects_dir() / project_id
                                 if project_dir.exists():
                                     import shutil
                                     shutil.rmtree(project_dir)
@@ -1819,7 +1820,7 @@ def create_main_ui():
 def main():
     """启动应用"""
     # 迁移配置文件：删除旧的outline_max_tokens字段
-    config_file = Path("config/user_config.json")
+    config_file = get_config_dir() / "user_config.json"
     if config_file.exists():
         try:
             with open(config_file, 'r', encoding='utf-8') as f:

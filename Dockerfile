@@ -1,14 +1,13 @@
-# AI 小说创作工具 Dockerfile
-# 基于 Python 3.11 官方镜像
+# AI 小说创作工具 Dockerfile (Hugging Face Spaces 适配版)
 FROM python:3.11-slim
-
-# 设置工作目录
-WORKDIR /app
 
 # 设置环境变量
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV HF_SPACE=1
+ENV GRADIO_SERVER_NAME="0.0.0.0"
+ENV GRADIO_SERVER_PORT=7860
 
 # 安装系统依赖
 RUN apt-get update && apt-get install -y \
@@ -17,29 +16,29 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制依赖文件
-COPY requirements.txt .
-COPY requirements-dev.txt .
+# 创建非特权用户 (Hugging Face Spaces 默认使用 UID 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-dev.txt
+# 设置工作目录
+WORKDIR $HOME/app
 
-# 创建必要的目录
-RUN mkdir -p logs cache output data backups templates project_templates plugins
+# 复制并安装依赖
+COPY --chown=user requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # 复制应用代码
-COPY . .
+COPY --chown=user . .
 
-# 设置权限
-RUN chmod +x start.sh start.bat run.py
+# 创建持久化目录 (在 HF Spaces 中 /data 是挂载点)
+USER root
+RUN mkdir -p /data && chown -R user:user /data
+USER user
 
 # 暴露端口
-EXPOSE 8000
+EXPOSE 7860
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# 设置启动命令
-CMD ["python", "run.py"]
+# 启动脚本
+CMD ["python", "run_hf.py"]

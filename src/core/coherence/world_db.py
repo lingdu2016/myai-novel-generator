@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
+from ...config.paths import get_cache_dir
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class WorldDatabase:
             cache_dir: 缓存目录
         """
         self.project_id = project_id
-        self.cache_dir = cache_dir or Path("cache/coherence")
+        self.cache_dir = cache_dir or get_cache_dir() / "coherence"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # 地点

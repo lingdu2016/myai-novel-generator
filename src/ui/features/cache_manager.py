@@ -10,6 +10,7 @@ import logging
 import os
 from typing import Tuple, List
 from pathlib import Path
+from ...config.paths import get_projects_dir, get_cache_dir
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def get_project_info(project_id: str) -> dict:
         项目信息字典
     """
     try:
-        project_file = Path("projects") / f"{project_id}.json"
+        project_file = get_projects_dir() / f"{project_id}.json"
         if project_file.exists():
             import json
             with open(project_file, 'r', encoding='utf-8') as f:
@@ -58,7 +59,7 @@ def list_generation_caches():
     except ImportError:
         # 如果novel_generator模块不存在，手动扫描
         caches = []
-        cache_dir = Path("cache/generation")
+        cache_dir = get_cache_dir() / "generation"
         if cache_dir.exists():
             for cache_file in cache_dir.glob("*.json"):
                 try:
@@ -100,7 +101,7 @@ def list_summary_caches():
     except ImportError:
         # 手动扫描
         caches = []
-        cache_dir = Path("cache/summaries")
+        cache_dir = get_cache_dir() / "summaries"
         if cache_dir.exists():
             for cache_file in cache_dir.glob("*.json"):
                 try:
@@ -133,7 +134,7 @@ def clear_generation_cache(project_id: str) -> Tuple[bool, str]:
         return clear_cache_func(project_id)
     except ImportError:
         # 手动删除
-        cache_file = Path("cache/generation") / f"{project_id}.json"
+        cache_file = get_cache_dir() / "generation" / f"{project_id}.json"
         if cache_file.exists():
             cache_file.unlink()
             return True, f"缓存已清理: {project_id}"
@@ -163,7 +164,7 @@ def clear_all_generation_caches() -> Tuple[bool, str]:
 
     except ImportError:
         # 手动清理
-        cache_dir = Path("cache/generation")
+        cache_dir = get_cache_dir() / "generation"
         if cache_dir.exists():
             import shutil
             count = len(list(cache_dir.glob("*.json")))
@@ -185,7 +186,7 @@ def get_generation_cache_size() -> str:
         return get_size_func()
     except ImportError:
         # 手动计算
-        cache_dir = Path("cache/generation")
+        cache_dir = get_cache_dir() / "generation"
         if cache_dir.exists():
             total_size = sum(f.stat().st_size for f in cache_dir.glob("*") if f.is_file())
             size_mb = total_size / 1024 / 1024
@@ -203,7 +204,7 @@ def clear_all_summary_caches() -> Tuple[bool, str]:
     try:
         from novel_generator import clear_chapter_summaries as clear_summaries_func
         # 这需要项目ID，但我们可以清空整个目录
-        cache_dir = Path("cache/summaries")
+        cache_dir = get_cache_dir() / "summaries"
         if cache_dir.exists():
             import shutil
             count = len(list(cache_dir.glob("*.json")))
@@ -214,7 +215,7 @@ def clear_all_summary_caches() -> Tuple[bool, str]:
 
     except ImportError:
         # 手动清理
-        cache_dir = Path("cache/summaries")
+        cache_dir = get_cache_dir() / "summaries"
         if cache_dir.exists():
             import shutil
             shutil.rmtree(cache_dir)
@@ -235,7 +236,7 @@ def get_summary_cache_size() -> str:
         return get_size_func()
     except ImportError:
         # 手动计算
-        cache_dir = Path("cache/summaries")
+        cache_dir = get_cache_dir() / "summaries"
         if cache_dir.exists():
             total_size = sum(f.stat().st_size for f in cache_dir.glob("*") if f.is_file())
             size_mb = total_size / 1024 / 1024

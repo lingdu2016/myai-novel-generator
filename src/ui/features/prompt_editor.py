@@ -15,6 +15,7 @@ import gradio as gr
 import logging
 from typing import Dict, List, Optional
 from pathlib import Path
+from ...config.paths import get_config_dir
 import json
 
 logger = logging.getLogger(__name__)
@@ -393,7 +394,7 @@ def create_project_prompt_editor(
                 export_data = prompt_manager.export_all()
                 
                 # 保存到文件
-                export_file = Path("config/prompts_export.json")
+                export_file = get_config_dir() / "prompts_export.json"
                 export_file.parent.mkdir(parents=True, exist_ok=True)
                 
                 with open(export_file, 'w', encoding='utf-8') as f:

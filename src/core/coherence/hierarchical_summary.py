@@ -14,6 +14,7 @@
 import json
 import logging
 from pathlib import Path
+from ...config.paths import get_cache_dir
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class HierarchicalSummaryManager:
         self.project_id = project_id
         self.chapters_per_arc = chapters_per_arc
         self.recent_chapters = recent_chapters
-        self.cache_dir = cache_dir or Path("cache/coherence")
+        self.cache_dir = cache_dir or get_cache_dir() / "coherence"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # 卷摘要存储 {arc_id: {chapters, summary, main_events, character_changes, foreshadowing}}

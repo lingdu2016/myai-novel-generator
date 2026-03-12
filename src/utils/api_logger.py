@@ -13,6 +13,7 @@ import random
 import json
 from datetime import datetime
 from pathlib import Path
+from ..config.paths import get_logs_dir
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class APILogger:
         self.session_start = datetime.now()
 
         # 日志目录
-        self.log_dir = Path("logs/api_samples")
+        self.log_dir = get_logs_dir() / "api_samples"
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # 当前会话日志文件

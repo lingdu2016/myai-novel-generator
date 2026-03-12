@@ -12,6 +12,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from ...config.paths import get_cache_dir
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ class PlotManager:
             cache_dir: 缓存目录
         """
         self.project_id = project_id
-        self.cache_dir = cache_dir or Path("cache/coherence")
+        self.cache_dir = cache_dir or get_cache_dir() / "coherence"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # 所有剧情线 {thread_id: PlotThread}

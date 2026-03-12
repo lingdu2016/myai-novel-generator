@@ -12,11 +12,12 @@ import logging
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
+from src.config.paths import get_projects_dir
 
 logger = logging.getLogger(__name__)
 
-PROJECTS_DIR = "projects"
-os.makedirs(PROJECTS_DIR, exist_ok=True)
+PROJECTS_DIR = get_projects_dir()
+PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ProjectManager:
