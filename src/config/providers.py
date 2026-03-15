@@ -6,8 +6,9 @@
 """
 
 import logging
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,9 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "Google": ProviderConfig(
         id="google",
         name="Google Gemini",
-        base_url="https://generativelanguage.googleapis.com",
+        base_url="https://generativelanguage.googleapis.com/v1beta",
         models=["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"],
-        default_model="gemini-2.0-flash-exp",
+        default_model="gemini-1.5-flash",
         requires_key=True,
         api_key_header="x-goog-api-key",
         api_key_prefix="",

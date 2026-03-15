@@ -48,6 +48,7 @@ projects/*.json
 
 # Config (user data)
 config/*.yaml
+config/*.json
 !config/config.yaml.example
 
 # Data
