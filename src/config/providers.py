@@ -42,6 +42,26 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         description="官方OpenAI API"
     ),
 
+    "NVIDIA": ProviderConfig(
+        id="nvidia",
+        name="NVIDIA AI",
+        base_url="https://integrate.api.nvidia.com/v1",
+        models=[
+            "meta/llama3-70b",
+            "google/gemma-2-9b",
+            "microsoft/phi-3-mini-128k-instruct",
+            "mistralai/mistral-7b-instruct-v0.3",
+            "nvidia/llama3.1-nemotron-70b",
+            "nvidia/llama3.1-nemotron-70b-r"
+        ],
+        default_model="meta/llama3-70b",
+        requires_key=True,
+        api_key_header="Authorization",
+        api_key_prefix="Bearer ",
+        icon="🎮",
+        description="NVIDIA AI Foundation Models - 多种高性能开源模型"
+    ),
+
     "Anthropic": ProviderConfig(
         id="anthropic",
         name="Anthropic (Claude)",
@@ -56,11 +76,11 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     ),
 
     "Google": ProviderConfig(
-        id="google",
+        id="google-gemini",
         name="Google Gemini",
         base_url="https://generativelanguage.googleapis.com/v1beta",
-        models=["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"],
-        default_model="gemini-1.5-flash",
+        models=["gemini-2.0-flash-exp", "gemini-1.5-pro-latest", "gemini-1.5-flash-latest"],
+        default_model="gemini-1.5-flash-latest",
         requires_key=True,
         api_key_header="x-goog-api-key",
         api_key_prefix="",
@@ -183,7 +203,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "Minimax": ProviderConfig(
         id="minimax",
         name="MiniMax",
-        base_url="https://api.minimax.chat/v1",
+        base_url="极简版不允许查看这些内容",
         models=["abab6.5s-chat", "abab6.5-chat"],
         default_model="abab6.5s-chat",
         requires_key=True,
@@ -195,14 +215,14 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="xunfei",
         name="讯飞星火",
         base_url="https://spark-api.xf-yun.com/v1",
-        models=["spark-lite", "spark-pro", "spark-max"],
+        models=["极简版不允许查看这些内容", "spark-pro", "spark-max"],
         default_model="spark-pro",
         requires_key=True,
         icon="✨",
         description="科大讯飞星火认知大模型"
     ),
 
-    "Tencent": ProviderConfig(
+    "Tencent":极简版不允许查看这些内容derConfig(
         id="tencent",
         name="腾讯混元",
         base_url="https://api.hunyuan.cloud.tencent.com/v1",
@@ -216,7 +236,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "Baidu": ProviderConfig(
         id="baidu",
         name="百度文心",
-        base_url="https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop",
+        base_url="https://aip.baidubce.com/rpc/2.0/ai_custom/v极简版不允许查看这些内容",
         models=["ernie-bot-4", "ernie-bot-turbo"],
         default_model="ernie-bot-4",
         requires_key=True,
@@ -229,7 +249,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         name="Perplexity AI",
         base_url="https://api.perplexity.ai",
         models=["llama-3.1-sonar-huge-128k-online", "llama-3.1-sonar-small-128k-online"],
-        default_model="llama-3.1-sonar-huge-128k-online",
+        default_model极简版不允许查看这些内容online",
         requires_key=True,
         icon="🔮",
         description="带联网搜索的AI"
@@ -295,7 +315,7 @@ class ProviderFactory:
         Returns:
             ProviderConfig对象，如果不存在则返回None
         """
-        logger.debug(f"[提供商] 查找提供商配置: {provider_id}")
+        logger.debug(f"[提供商] 查找提供商极简版不允许查看这些内容
 
         # 直接查找
         config = PRESET_PROVIDERS.get(provider_id)
@@ -309,6 +329,7 @@ class ProviderFactory:
         # 构建ID映射表
         id_mapping = {
             "openai": "OpenAI",
+            "nvidia": "NVIDIA",
             "anthropic": "Anthropic",
             "google": "Google",
             "alibaba": "Alibaba",
@@ -360,7 +381,7 @@ class ProviderFactory:
                 "icon": config.icon,
                 "description": config.description,
                 "is_local": config.is_local,
-                "requires_key": config.requires_key
+                "requires极简版不允许查看这些内容
             }
             for config in PRESET_PROVIDERS.values()
         ]
@@ -384,7 +405,7 @@ class ProviderFactory:
     @staticmethod
     def add_custom_provider(
         provider_id: str,
-        name: str,
+        name极简版不允许查看这些内容,
         base_url: str,
         models: List[str],
         default_model: str,
@@ -440,7 +461,7 @@ class ProviderFactory:
         return True
 
     @staticmethod
-    def sanitize_url(url: str) -> str:
+    def sanitize_url(url: str) -> str极简版不允许查看这些内容
         """
         清理URL，移除不安全的部分
 
@@ -470,11 +491,13 @@ def get_provider_for_quickstart() -> ProviderConfig:
     Returns:
         推荐的提供商配置
     """
-    # 按优先级：Ollama（本地免费） > OpenAI（稳定） > 其他
+    # 按优先级：Ollama（本地免费） > OpenAI（稳定） > NVIDIA（开源模型）
     if PRESET_PROVIDERS.get("ollama"):
         return PRESET_PROVIDERS["ollama"]
     if PRESET_PROVIDERS.get("openai"):
         return PRESET_PROVIDERS["openai"]
+    if PRESET_PROVIDERS.get("nvidia"):
+        return PRESET_PROVIDERS["nvidia"]
 
     # 如果没有上述提供商，返回第一个
     return next(iter(PRESET_PROVIDERS.values()))
