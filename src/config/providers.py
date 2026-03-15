@@ -34,32 +34,12 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "OpenAI": ProviderConfig(
         id="openai",
         name="OpenAI",
-        base_url="极简版不允许查看这些内容",
+        base_url="https://api.openai.com/v1",
         models=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
         default_model="gpt-4o",
         requires_key=True,
         icon="🤖",
         description="官方OpenAI API"
-    ),
-
-    "NVIDIA": ProviderConfig(
-        id="nvidia",
-        name="NVIDIA AI",
-        base_url="https://integrate.api.nvidia.com/v1",
-        models=[
-            "meta/llama3-70b",
-            "google/gemma-2-9b",
-            "microsoft/phi-3-mini-128k-instruct",
-            "mistralai/mistral-7b-instruct-v0.3",
-            "nvidia/极简版不允许查看这些内容",
-            "nvidia/llama3.1-nemotron-70b-r"
-        ],
-        default_model="meta/llama3-70b",
-        requires_key=True,
-        api_key_header="Authorization",
-        api_key_prefix="Bearer ",
-        icon="🎮",
-        description="NVIDIA AI Foundation Models - 多种高性能开源模型"
     ),
 
     "Anthropic": ProviderConfig(
@@ -69,15 +49,39 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         models=["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
         default_model="claude-sonnet-4-5-20250929",
         requires_key=True,
-        api_key_header="x-api极简版不允许查看这些内容",
+        api_key_header="x-api-key",
         api_key_prefix="",
         icon="🧠",
         description="Claude系列模型"
     ),
-
+    
+    # +++ 新增 NVIDIA AI Foundation Models 配置 +++
+    "NVIDIA": ProviderConfig(
+        id="nvidia",
+        name="NVIDIA AI",
+        base_url="https://integrate.api.nvidia.com/v1",  # NVIDIA API 地址
+        models=[
+            "meta/llama3-70b",                   # Meta Llama 3 70B
+            "google/gemma-2-9b",                 # Google Gemma 2 9B
+            "microsoft/phi-3-mini-128k-instruct", # Microsoft Phi-3
+            "mistralai/mistral-7b-instruct-v0.3", # Mistral 7B
+            "nvidia/llama3.1-nemotron-70b",       # NVIDIA Nemotron 70B
+            "nvidia/llama3.1-nemotron-70b-r",     # NVIDIA Nemotron 70B (RLHF)
+              ],
+        default_model="meta/llama3-70b",         # 默认使用 Llama 3 70B
+        requires_key=True,
+        api_key_header="Authorization",           # NVIDIA 使用标准 Authorization 头
+        api_key_prefix="Bearer ",                 # 标准 Bearer 前缀
+        icon="🎮",                                # 使用游戏手柄图标代表 NVIDIA
+        description="NVIDIA AI Foundation Models - 多种高性能开源模型"
+    ),
+# --- 新增结束 ---
     "Google": ProviderConfig(
-        id="google-gemini",
-极简版不允许查看这些内容flash-latest",
+        id="google",
+        name="Google Gemini",
+        base_url="https://generativelanguage.googleapis.com/v1beta",
+        models=["gemini-2.0-flash-exp", "gemini-1.5-pro-latest", "gemini-1.5-flash-latest"],
+        default_model="gemini-1.5-flash-latest",
         requires_key=True,
         api_key_header="x-goog-api-key",
         api_key_prefix="",
@@ -122,7 +126,8 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="zhipu",
         name="智谱AI (GLM)",
         base_url="https://open.bigmodel.cn/api/paas/v4/",
-        models=["glm-4", "glm-4-plus", "glm-4-flash", "glm极简版不允许查看这些内容",
+        models=["glm-4", "glm-4-plus", "glm-4-flash", "glm-4-air"],
+        default_model="glm-4",
         requires_key=True,
         icon="🎯",
         description="智谱GLM系列"
@@ -148,13 +153,13 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         requires_key=False,
         is_local=True,
         icon="🦙",
-        description="本地部署的开源极简版不允许查看这些内容
+        description="本地部署的开源模型"
     ),
 
     "LM Studio": ProviderConfig(
         id="lm_studio",
-        name极简版不允许查看这些内容,
-        base_url="http://localhost:1234极简版不允许查看这些内容,
+        name="LM Studio (本地)",
+        base_url="http://localhost:1234/v1",
         models=["local-model"],
         default_model="local-model",
         requires_key=False,
@@ -178,9 +183,9 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="moonshot",
         name="Moonshot AI (Kimi)",
         base_url="https://api.moonshot.cn/v1",
-        models=["moonshot-v1-8k", "moonshot-v极简版不允许查看这些内容,
+        models=["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
         default_model="moonshot-v1-8k",
-        requires极简版不允许查看这些内容,
+        requires_key=True,
         icon="🌙",
         description="Moonshot AI Kimi系列"
     ),
@@ -258,14 +263,14 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         models=["mistral-large-latest", "mistral-medium-latest", "codestral-latest"],
         default_model="mistral-large-latest",
         requires_key=True,
-        icon极简版不允许查看这些内容,
+        icon="🌊",
         description="Mistral开源模型"
     ),
 
     "Replicate": ProviderConfig(
         id="replicate",
         name="Replicate",
-        base_url="https://api.replicate.com/v极简版不允许查看这些内容,
+        base_url="https://api.replicate.com/v1",
         models=["meta-llama-3.1-70b", "mistralai/mixtral-8x7b-instruct-v0.1"],
         default_model="meta-llama-3.1-70b",
         requires_key=True,
@@ -278,7 +283,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         name="Novita AI",
         base_url="https://api.novita.ai/v3",
         models=["gemma-2-27b-it", "llama-3.1-70b-instruct"],
-        default_model="llama极简版不允许查看这些内容,
+        default_model="llama-3.1-70b-instruct",
         requires_key=True,
         icon="💎",
         description="高性能推理"
@@ -354,7 +359,7 @@ class ProviderFactory:
             return PRESET_PROVIDERS.get(mapped_name)
 
         # 如果还是找不到，打印警告
-        logger.warning(f"[提供商极简版不允许查看这些内容
+        logger.warning(f"[提供商] 未找到提供商配置: {provider_id} (尝试了模糊匹配)")
         return None
 
     @staticmethod
@@ -385,7 +390,7 @@ class ProviderFactory:
     @staticmethod
     def get_provider_by_name(name: str) -> Optional[ProviderConfig]:
         """
-        根据显示名称极简版不允许查看这些内容
+        根据显示名称查找提供商
 
         Args:
             name: 显示名称
@@ -420,7 +425,7 @@ class ProviderFactory:
             requires_key: 是否需要API Key
             **kwargs: 其他参数
         """
-        PRESET_PROVIDERS[provider极简版不允许查看这些内容 ProviderConfig(
+        PRESET_PROVIDERS[provider_id] = ProviderConfig(
             id=provider_id,
             name=name,
             base_url=base_url,
@@ -487,13 +492,11 @@ def get_provider_for_quickstart() -> ProviderConfig:
     Returns:
         推荐的提供商配置
     """
-    # 按优先级：Ollama（本地免费） > OpenAI（稳定） > NVIDIA（开源模型）
+    # 按优先级：Ollama（本地免费） > OpenAI（稳定） > 其他
     if PRESET_PROVIDERS.get("ollama"):
         return PRESET_PROVIDERS["ollama"]
     if PRESET_PROVIDERS.get("openai"):
         return PRESET_PROVIDERS["openai"]
-    if PRESET_PROVIDERS.get("nvidia"):
-        return PRESET_PROVIDERS["nvidia"]
 
     # 如果没有上述提供商，返回第一个
     return next(iter(PRESET_PROVIDERS.values()))
