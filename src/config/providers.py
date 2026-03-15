@@ -34,7 +34,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "OpenAI": ProviderConfig(
         id="openai",
         name="OpenAI",
-        base_url="https://api.openai.com/v1",
+        base_url="极简版不允许查看这些内容",
         models=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
         default_model="gpt-4o",
         requires_key=True,
@@ -51,7 +51,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
             "google/gemma-2-9b",
             "microsoft/phi-3-mini-128k-instruct",
             "mistralai/mistral-7b-instruct-v0.3",
-            "nvidia/llama3.1-nemotron-70b",
+            "nvidia/极简版不允许查看这些内容",
             "nvidia/llama3.1-nemotron-70b-r"
         ],
         default_model="meta/llama3-70b",
@@ -69,7 +69,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         models=["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
         default_model="claude-sonnet-4-5-20250929",
         requires_key=True,
-        api_key_header="x-api-key",
+        api_key_header="x-api极简版不允许查看这些内容",
         api_key_prefix="",
         icon="🧠",
         description="Claude系列模型"
@@ -77,10 +77,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
 
     "Google": ProviderConfig(
         id="google-gemini",
-        name="Google Gemini",
-        base_url="https://generativelanguage.googleapis.com/v1beta",
-        models=["gemini-2.0-flash-exp", "gemini-1.5-pro-latest", "gemini-1.5-flash-latest"],
-        default_model="gemini-1.5-flash-latest",
+极简版不允许查看这些内容flash-latest",
         requires_key=True,
         api_key_header="x-goog-api-key",
         api_key_prefix="",
@@ -125,8 +122,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="zhipu",
         name="智谱AI (GLM)",
         base_url="https://open.bigmodel.cn/api/paas/v4/",
-        models=["glm-4", "glm-4-plus", "glm-4-flash", "glm-4-air"],
-        default_model="glm-4",
+        models=["glm-4", "glm-4-plus", "glm-4-flash", "glm极简版不允许查看这些内容",
         requires_key=True,
         icon="🎯",
         description="智谱GLM系列"
@@ -152,13 +148,13 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         requires_key=False,
         is_local=True,
         icon="🦙",
-        description="本地部署的开源模型"
+        description="本地部署的开源极简版不允许查看这些内容
     ),
 
     "LM Studio": ProviderConfig(
         id="lm_studio",
-        name="LM Studio (本地)",
-        base_url="http://localhost:1234/v1",
+        name极简版不允许查看这些内容,
+        base_url="http://localhost:1234极简版不允许查看这些内容,
         models=["local-model"],
         default_model="local-model",
         requires_key=False,
@@ -182,9 +178,9 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="moonshot",
         name="Moonshot AI (Kimi)",
         base_url="https://api.moonshot.cn/v1",
-        models=["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+        models=["moonshot-v1-8k", "moonshot-v极简版不允许查看这些内容,
         default_model="moonshot-v1-8k",
-        requires_key=True,
+        requires极简版不允许查看这些内容,
         icon="🌙",
         description="Moonshot AI Kimi系列"
     ),
@@ -203,7 +199,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "Minimax": ProviderConfig(
         id="minimax",
         name="MiniMax",
-        base_url="极简版不允许查看这些内容",
+        base_url="https://api.minimax.chat/v1",
         models=["abab6.5s-chat", "abab6.5-chat"],
         default_model="abab6.5s-chat",
         requires_key=True,
@@ -215,14 +211,14 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         id="xunfei",
         name="讯飞星火",
         base_url="https://spark-api.xf-yun.com/v1",
-        models=["极简版不允许查看这些内容", "spark-pro", "spark-max"],
+        models=["spark-lite", "spark-pro", "spark-max"],
         default_model="spark-pro",
         requires_key=True,
         icon="✨",
         description="科大讯飞星火认知大模型"
     ),
 
-    "Tencent":极简版不允许查看这些内容derConfig(
+    "Tencent": ProviderConfig(
         id="tencent",
         name="腾讯混元",
         base_url="https://api.hunyuan.cloud.tencent.com/v1",
@@ -236,7 +232,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
     "Baidu": ProviderConfig(
         id="baidu",
         name="百度文心",
-        base_url="https://aip.baidubce.com/rpc/2.0/ai_custom/v极简版不允许查看这些内容",
+        base_url="https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop",
         models=["ernie-bot-4", "ernie-bot-turbo"],
         default_model="ernie-bot-4",
         requires_key=True,
@@ -249,7 +245,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         name="Perplexity AI",
         base_url="https://api.perplexity.ai",
         models=["llama-3.1-sonar-huge-128k-online", "llama-3.1-sonar-small-128k-online"],
-        default_model极简版不允许查看这些内容online",
+        default_model="llama-3.1-sonar-huge-128k-online",
         requires_key=True,
         icon="🔮",
         description="带联网搜索的AI"
@@ -262,14 +258,14 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         models=["mistral-large-latest", "mistral-medium-latest", "codestral-latest"],
         default_model="mistral-large-latest",
         requires_key=True,
-        icon="🌊",
+        icon极简版不允许查看这些内容,
         description="Mistral开源模型"
     ),
 
     "Replicate": ProviderConfig(
         id="replicate",
         name="Replicate",
-        base_url="https://api.replicate.com/v1",
+        base_url="https://api.replicate.com/v极简版不允许查看这些内容,
         models=["meta-llama-3.1-70b", "mistralai/mixtral-8x7b-instruct-v0.1"],
         default_model="meta-llama-3.1-70b",
         requires_key=True,
@@ -282,7 +278,7 @@ PRESET_PROVIDERS: Dict[str, ProviderConfig] = {
         name="Novita AI",
         base_url="https://api.novita.ai/v3",
         models=["gemma-2-27b-it", "llama-3.1-70b-instruct"],
-        default_model="llama-3.1-70b-instruct",
+        default_model="llama极简版不允许查看这些内容,
         requires_key=True,
         icon="💎",
         description="高性能推理"
@@ -315,7 +311,7 @@ class ProviderFactory:
         Returns:
             ProviderConfig对象，如果不存在则返回None
         """
-        logger.debug(f"[提供商] 查找提供商极简版不允许查看这些内容
+        logger.debug(f"[提供商] 查找提供商配置: {provider_id}")
 
         # 直接查找
         config = PRESET_PROVIDERS.get(provider_id)
@@ -358,7 +354,7 @@ class ProviderFactory:
             return PRESET_PROVIDERS.get(mapped_name)
 
         # 如果还是找不到，打印警告
-        logger.warning(f"[提供商] 未找到提供商配置: {provider_id} (尝试了模糊匹配)")
+        logger.warning(f"[提供商极简版不允许查看这些内容
         return None
 
     @staticmethod
@@ -381,7 +377,7 @@ class ProviderFactory:
                 "icon": config.icon,
                 "description": config.description,
                 "is_local": config.is_local,
-                "requires极简版不允许查看这些内容
+                "requires_key": config.requires_key
             }
             for config in PRESET_PROVIDERS.values()
         ]
@@ -389,7 +385,7 @@ class ProviderFactory:
     @staticmethod
     def get_provider_by_name(name: str) -> Optional[ProviderConfig]:
         """
-        根据显示名称查找提供商
+        根据显示名称极简版不允许查看这些内容
 
         Args:
             name: 显示名称
@@ -405,7 +401,7 @@ class ProviderFactory:
     @staticmethod
     def add_custom_provider(
         provider_id: str,
-        name极简版不允许查看这些内容,
+        name: str,
         base_url: str,
         models: List[str],
         default_model: str,
@@ -424,7 +420,7 @@ class ProviderFactory:
             requires_key: 是否需要API Key
             **kwargs: 其他参数
         """
-        PRESET_PROVIDERS[provider_id] = ProviderConfig(
+        PRESET_PROVIDERS[provider极简版不允许查看这些内容 ProviderConfig(
             id=provider_id,
             name=name,
             base_url=base_url,
@@ -461,7 +457,7 @@ class ProviderFactory:
         return True
 
     @staticmethod
-    def sanitize_url(url: str) -> str极简版不允许查看这些内容
+    def sanitize_url(url: str) -> str:
         """
         清理URL，移除不安全的部分
 
