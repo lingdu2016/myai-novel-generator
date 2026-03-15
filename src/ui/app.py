@@ -187,6 +187,58 @@ class AppState:
                 config = json.load(f)
 
             providers = config.get("providers", [])
+            
+            # Handle backward compatibility: convert old dict format to list format
+            if isinstance(providers, dict):
+                logger.info("[应用] 转换旧字典格式为列表格式...")
+                old_providers = providers
+                providers = []
+                
+                # Map old provider keys to their provider_id
+                provider_key_map = {
+                    "google": "google",
+                    "openai": "openai",
+                    "anthropic": "anthropic",
+                    "deepseek": "deepseek",
+                    "mistral": "mistral",
+                    "groq": "groq",
+                    "together": "together",
+                    "openrouter": "openrouter",
+                    "aliyun": "alibaba",
+                    "zhipu": "zhipu",
+                    "moonshot": "moonshot",
+                    "baichuan": "baichuan",
+                    "minimax": "minimax",
+                }
+                
+                from src.config.providers import ProviderFactory
+                for provider_key, provider_data in old_providers.items():
+                    provider_id = provider_key_map.get(provider_key, provider_key)
+                    
+                    # Get preset config for default values
+                    preset_config = ProviderFactory.get_provider_config(provider_id)
+                    
+                    provider_entry = {
+                        "name": provider_key,
+                        "provider_id": provider_id,
+                        "api_key": provider_data.get("api_key", ""),
+                        "enabled": True
+                    }
+                    
+                    if preset_config:
+                        provider_entry["model"] = preset_config.default_model
+                        provider_entry["base_url"] = preset_config.base_url
+                        provider_entry["timeout"] = 60
+                        provider_entry["max_retries"] = 3
+                    
+                    providers.append(provider_entry)
+                
+                # Update the config
+                config["providers"] = providers
+                with open(config_file, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, ensure_ascii=False, indent=2)
+                logger.info(f"[应用] 已转换并保存 {len(providers)} 个提供商到新格式")
+
             if not providers:
                 logger.info("[应用] API配置中没有提供商配置")
                 return False
